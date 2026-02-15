@@ -5,7 +5,7 @@ import Link from "next/link"
 import {
   ArrowLeft, Loader2, Target, Check, Bell, BellOff,
   Calendar, Trophy, Lightbulb, Flame, Zap, Clock,
-  Trash2,
+  Trash2, TrendingUp, TrendingDown, Minus, Users,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -17,6 +17,7 @@ import {
   getGrowthPlan, saveGrowthPlan, deleteGrowthPlan,
   markTodayCompleted, isTodayCompleted, shouldPostToday,
   getProgress, getCurrentWeek,
+  addFollowerEntry, getLatestFollowerCount, getFollowerTrend, getFollowerGrowth, getCurrentMilestoneTarget,
 } from "@/lib/planner-storage"
 import { getProfile } from "@/lib/profile-storage"
 import { requestNotificationPermission, isNotificationSupported } from "@/lib/notifications"
@@ -44,6 +45,8 @@ export default function PlannerPage() {
   const [goal, setGoal] = useState("")
   const [industry, setIndustry] = useState("beauty")
   const [notes, setNotes] = useState("")
+  const [currentFollowers, setCurrentFollowers] = useState("")
+  const [followerInput, setFollowerInput] = useState("")
 
   useEffect(() => {
     setPlan(getGrowthPlan())
@@ -63,7 +66,7 @@ export default function PlannerPage() {
       const res = await fetch("/api/generate-plan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ goal, industry, notes, profile }),
+        body: JSON.stringify({ goal, industry, notes, profile, currentFollowers: currentFollowers ? Number(currentFollowers) : undefined }),
       })
 
       if (!res.ok) {
@@ -87,6 +90,8 @@ export default function PlannerPage() {
     const end = new Date(now)
     end.setDate(end.getDate() + option.durationWeeks * 7)
 
+    const initFollowers = currentFollowers ? Number(currentFollowers) : undefined
+
     const newPlan: GrowthPlan = {
       id: crypto.randomUUID(),
       goal,
@@ -102,6 +107,8 @@ export default function PlannerPage() {
       notificationTime: "09:00",
       status: "active",
       createdAt: now.toISOString(),
+      initialFollowers: initFollowers,
+      followerLog: initFollowers != null ? [{ date: now.toISOString().slice(0, 10), count: initFollowers, weekNumber: 1 }] : [],
     }
 
     saveGrowthPlan(newPlan)
@@ -148,10 +155,23 @@ export default function PlannerPage() {
     toast.success("Plan usunięty")
   }
 
+  function handleSaveFollowers() {
+    const count = Number(followerInput)
+    if (!count || count < 0 || !plan) return
+    addFollowerEntry(count)
+    setPlan(getGrowthPlan())
+    setFollowerInput("")
+    toast.success("Liczba obserwujących zapisana!")
+  }
+
   const todayDone = isTodayCompleted()
   const progress = plan ? getProgress(plan) : null
   const currentWeek = plan ? getCurrentWeek(plan) : 0
   const postToday = plan ? shouldPostToday(plan) : false
+  const latestCount = plan ? getLatestFollowerCount(plan) : null
+  const trend = plan ? getFollowerTrend(plan) : null
+  const growth = plan ? getFollowerGrowth(plan) : null
+  const milestoneTarget = plan ? getCurrentMilestoneTarget(plan) : null
 
   // FORM STATE — no plan, no generated plan
   if (!plan && !generatedPlan && !loading) {
@@ -204,12 +224,33 @@ export default function PlannerPage() {
               <Label htmlFor="planNotes" className="text-sm font-medium">Dodatkowe informacje</Label>
               <Textarea
                 id="planNotes"
-                placeholder="np. mam aktualnie 200 obserwujących, prowadzę salon w Krakowie"
+                placeholder="np. prowadzę salon w Krakowie, specjalizuję się w koloryzacji"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={3}
                 className="resize-none"
               />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="currentFollowers" className="text-sm font-medium">
+                Aktualna liczba obserwujących
+                <span className="text-muted-foreground font-normal ml-1">(opcjonalnie)</span>
+              </Label>
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-muted-foreground shrink-0" />
+                <Input
+                  id="currentFollowers"
+                  type="number"
+                  min={0}
+                  placeholder="np. 500"
+                  value={currentFollowers}
+                  onChange={(e) => setCurrentFollowers(e.target.value)}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Pozwoli śledzić wzrost i dostosowywać scenariusze do Twojego tempa.
+              </p>
             </div>
 
             <Button type="submit" className="w-full bg-primary text-primary-foreground">
@@ -323,7 +364,7 @@ export default function PlannerPage() {
           </Link>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground break-words">
                 {plan.goal}
               </h1>
               <p className="text-sm text-muted-foreground">
@@ -345,6 +386,91 @@ export default function PlannerPage() {
           />
         </div>
 
+        {/* Follower tracking */}
+        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+          <div className="flex items-center gap-2 mb-3">
+            <Users className="h-4 w-4 text-muted-foreground" />
+            <h3 className="text-sm font-semibold text-foreground">Śledzenie wzrostu</h3>
+          </div>
+
+          <div className="flex gap-2 mb-3">
+            <Input
+              type="number"
+              min={0}
+              placeholder="Aktualna liczba obserwujących"
+              value={followerInput}
+              onChange={(e) => setFollowerInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSaveFollowers()}
+            />
+            <Button size="sm" onClick={handleSaveFollowers} disabled={!followerInput} className="shrink-0">
+              Zapisz
+            </Button>
+          </div>
+
+          {latestCount !== null && (
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+                {plan.initialFollowers != null && (
+                  <span className="text-muted-foreground">
+                    Start: <span className="text-foreground font-medium">{plan.initialFollowers}</span>
+                  </span>
+                )}
+                <span className="text-muted-foreground">
+                  Teraz: <span className="text-foreground font-medium">{latestCount}</span>
+                </span>
+                {growth !== null && growth !== 0 && (
+                  <span className={growth > 0 ? "text-green-500 font-medium" : "text-red-500 font-medium"}>
+                    ({growth > 0 ? "+" : ""}{growth})
+                  </span>
+                )}
+              </div>
+
+              {milestoneTarget !== null && (
+                <p className="text-xs text-muted-foreground">
+                  Cel tydz. {currentWeek}: <span className="text-foreground font-medium">{milestoneTarget}</span>
+                </p>
+              )}
+
+              {trend && (
+                <div className={`flex items-center gap-1.5 text-sm font-medium ${
+                  trend === "exceeding" ? "text-green-500"
+                  : trend === "on-track" ? "text-yellow-500"
+                  : "text-red-500"
+                }`}>
+                  {trend === "exceeding" ? (
+                    <><TrendingUp className="h-4 w-4" /> Wyprzedzasz plan!</>
+                  ) : trend === "on-track" ? (
+                    <><Minus className="h-4 w-4" /> Na dobrej drodze</>
+                  ) : (
+                    <><TrendingDown className="h-4 w-4" /> Tempo do nadrobienia</>
+                  )}
+                  {milestoneTarget !== null && latestCount !== null && (
+                    <span className="text-xs font-normal text-muted-foreground ml-1">
+                      ({latestCount > milestoneTarget ? "+" : ""}{latestCount - milestoneTarget})
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {plan.followerLog.length > 1 && (
+                <div className="flex flex-wrap gap-1.5 mt-1">
+                  {plan.followerLog.slice(-6).map((entry, i) => (
+                    <Badge key={i} variant="outline" className="text-xs">
+                      {entry.date.slice(5)}: {entry.count}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {latestCount === null && (
+            <p className="text-xs text-muted-foreground">
+              Wpisz liczbę obserwujących, aby śledzić postęp.
+            </p>
+          )}
+        </div>
+
         {/* Today's action */}
         {postToday && (
           <div className={`rounded-xl border-2 p-4 ${todayDone ? "border-green-500/30 bg-green-500/5" : "border-primary/30 bg-primary/5"}`}>
@@ -361,7 +487,7 @@ export default function PlannerPage() {
                   </span>
                 </div>
                 {todayTask && (
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-muted-foreground break-words">
                     {todayTask.action} &middot; <span className="text-foreground">{todayTask.contentType}</span>
                   </p>
                 )}
@@ -398,7 +524,7 @@ export default function PlannerPage() {
                   <span className={`font-medium sm:min-w-[90px] ${isToday ? "text-primary" : "text-foreground"}`}>
                     {task.day}
                   </span>
-                  <span className="text-muted-foreground flex-1">{task.action}</span>
+                  <span className="text-muted-foreground flex-1 break-words">{task.action}</span>
                   <Badge variant="secondary" className="text-xs shrink-0 w-fit">{task.contentType}</Badge>
                 </div>
               )
@@ -476,7 +602,7 @@ export default function PlannerPage() {
               )}
               <span className="text-sm font-medium text-foreground">Powiadomienia push</span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {plan.notificationsEnabled && (
                 <input
                   type="time"

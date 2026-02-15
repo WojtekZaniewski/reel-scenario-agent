@@ -54,7 +54,33 @@ Odpowiedz WYŁĄCZNIE w formacie JSON:
 }`;
 }
 
-export function buildScenarioPrompt(brief: Brief, reels: Reel[], profile?: UserProfile | null): string {
+export interface GrowthContext {
+  trend: 'exceeding' | 'on-track' | 'lagging';
+  currentFollowers: number;
+  targetFollowers: number;
+  weekNumber: number;
+  totalWeeks: number;
+}
+
+function buildGrowthContextSection(ctx?: GrowthContext | null): string {
+  if (!ctx) return '';
+  const trendPl = ctx.trend === 'exceeding' ? 'WYPRZEDZA PLAN' : ctx.trend === 'on-track' ? 'NA DOBREJ DRODZE' : 'OPÓŹNIONY';
+  const diff = ctx.currentFollowers - ctx.targetFollowers;
+  const diffStr = diff >= 0 ? `+${diff}` : `${diff}`;
+
+  return `
+
+KONTEKST WZROSTU KONTA:
+- Aktualna liczba obserwujących: ${ctx.currentFollowers}
+- Cel na najbliższy milestone: ${ctx.targetFollowers}
+- Status: ${trendPl} (${diffStr} vs cel)
+- Tydzień: ${ctx.weekNumber}/${ctx.totalWeeks}
+
+DOSTOSUJ SCENARIUSZ DO STATUSU WZROSTU:
+${ctx.trend === 'exceeding' ? '- Konto WYPRZEDZA plan — pozwól sobie na eksperymentalny content, testuj nowe formaty, buduj lojalność (nie tylko zasięg)' : ''}${ctx.trend === 'on-track' ? '- Konto idzie ZGODNIE Z PLANEM — kontynuuj sprawdzone wzorce, utrzymuj regularność, dodaj subtelne CTA' : ''}${ctx.trend === 'lagging' ? '- Konto jest OPÓŹNIONE — użyj mocniejszych hooków, więcej kontrowersji, CTA na share/save/komentarz, maximalizuj zasięg' : ''}`;
+}
+
+export function buildScenarioPrompt(brief: Brief, reels: Reel[], profile?: UserProfile | null, growthContext?: GrowthContext | null): string {
   const industry = brief.industry || 'beauty';
   const controversyDesc = brief.controversyLevel <= 2 ? 'bezpieczny, delikatny' : brief.controversyLevel === 3 ? 'zbalansowany' : 'odważny, kontrowersyjny';
   const lang = brief.language === 'en' ? 'angielskim' : 'polskim';
@@ -105,7 +131,7 @@ BRIEF:
 - Język: ${lang}
 - Poziom kontrowersji: ${brief.controversyLevel}/5 (${controversyDesc})
 ${brief.notes ? `- Dodatkowe notatki: ${brief.notes}` : ''}
-${buildProfileContext(profile)}
+${buildProfileContext(profile)}${buildGrowthContextSection(growthContext)}
 
 ${reelsSection}
 
@@ -185,7 +211,8 @@ export function buildGrowthPlanPrompt(
   goal: string,
   industry: string,
   notes: string,
-  profile?: UserProfile | null
+  profile?: UserProfile | null,
+  currentFollowers?: number
 ): string {
   const profileCtx = buildProfileContext(profile);
   const generationInfo = profile
@@ -199,6 +226,7 @@ export function buildGrowthPlanPrompt(
 
 CEL UŻYTKOWNIKA: ${goal}
 BRANŻA: ${industry}
+${currentFollowers != null ? `AKTUALNA LICZBA OBSERWUJĄCYCH: ${currentFollowers}` : ''}
 ${notes ? `DODATKOWE INFO: ${notes}` : ''}
 ${profileCtx}
 ${generationInfo}
@@ -229,6 +257,7 @@ ZASADY:
 - Jeśli cel jest nierealistyczny w podanym czasie, powiedz wprost i zaproponuj realistyczną alternatywę.
 - Harmonogram tygodniowy powinien uwzględniać dni odpoczynku (nie codziennie!)
 - Każdy milestone powinien być mierzalny i konkretny
+- Dla każdego milestone podaj expectedFollowers — oczekiwaną liczbę obserwujących na ten tydzień (oblicz realistycznie na podstawie statystyk i aktualnej liczby)
 
 Odpowiedz WYŁĄCZNIE w formacie JSON:
 {
@@ -243,7 +272,8 @@ Odpowiedz WYŁĄCZNIE w formacie JSON:
       "week": 2,
       "target": "konkretny cel na ten tydzień",
       "metric": "co mierzyć",
-      "checkpoints": ["co sprawdzić 1", "co sprawdzić 2"]
+      "checkpoints": ["co sprawdzić 1", "co sprawdzić 2"],
+      "expectedFollowers": 500
     }
   ],
   "contentPillars": ["filar 1", "filar 2", "filar 3"],

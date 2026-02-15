@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { google } from '@ai-sdk/google';
 import { generateText, streamText } from 'ai';
-import { buildAccountSuggestionPrompt, buildScenarioPrompt } from '@/lib/ai/prompts';
+import { buildAccountSuggestionPrompt, buildScenarioPrompt, type GrowthContext } from '@/lib/ai/prompts';
 import { AccountSuggestionResponse } from '@/lib/ai/types';
 import { fetchUserReels, fetchMediaByShortcode } from '@/lib/instagram/client';
 import { extractReelsFromResponse } from '@/lib/instagram/transform';
@@ -66,7 +66,7 @@ function parseAndSendScenario(
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { brief, profile } = body as { brief: Brief; profile?: UserProfile | null };
+  const { brief, profile, growthContext } = body as { brief: Brief; profile?: UserProfile | null; growthContext?: GrowthContext | null };
 
   if (!brief?.treatment) {
     return new Response(
@@ -210,7 +210,7 @@ export async function POST(request: NextRequest) {
           // Step 4: Generate scenario with reels
           send({ step: 'scenario', status: 'running' });
 
-          const scenarioPrompt = buildScenarioPrompt(brief, enrichedReels, profile);
+          const scenarioPrompt = buildScenarioPrompt(brief, enrichedReels, profile, growthContext);
           const result = streamText({
             model: google('gemini-2.5-flash'),
             prompt: scenarioPrompt,
@@ -229,7 +229,7 @@ export async function POST(request: NextRequest) {
           send({ step: 'enrich', status: 'done', data: { skipped: true } });
           send({ step: 'scenario', status: 'running', message: 'Generuję scenariusz bez inspiracji z Reelsów...' });
 
-          const scenarioPrompt = buildScenarioPrompt(brief, [], profile);
+          const scenarioPrompt = buildScenarioPrompt(brief, [], profile, growthContext);
           const result = streamText({
             model: google('gemini-2.5-flash'),
             prompt: scenarioPrompt,

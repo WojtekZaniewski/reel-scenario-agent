@@ -1,4 +1,4 @@
-import type { GrowthPlan } from '@/types/growth-plan';
+import type { GrowthPlan, FollowerEntry } from '@/types/growth-plan';
 
 const PLAN_KEY = 'rsg_growth_plan';
 
@@ -83,4 +83,59 @@ export function getCurrentWeek(plan: GrowthPlan): number {
   const diff = now.getTime() - start.getTime();
   const week = Math.floor(diff / (1000 * 60 * 60 * 24 * 7)) + 1;
   return Math.max(1, Math.min(week, plan.durationWeeks));
+}
+
+export function addFollowerEntry(count: number): void {
+  const plan = getGrowthPlan();
+  if (!plan) return;
+  const today = getTodayStr();
+  const week = getCurrentWeek(plan);
+
+  // Replace if entry for today already exists
+  const log = (plan.followerLog || []).filter((e) => e.date !== today);
+  log.push({ date: today, count, weekNumber: week });
+  plan.followerLog = log;
+  saveGrowthPlan(plan);
+}
+
+export function getLatestFollowerCount(plan: GrowthPlan): number | null {
+  const log = plan.followerLog || [];
+  if (log.length === 0) return plan.initialFollowers ?? null;
+  return log[log.length - 1].count;
+}
+
+export function getFollowerTrend(plan: GrowthPlan): 'exceeding' | 'on-track' | 'lagging' | null {
+  const latest = getLatestFollowerCount(plan);
+  if (latest === null) return null;
+
+  const week = getCurrentWeek(plan);
+  const milestones = plan.plan.milestones || [];
+
+  // Find closest milestone for current week (current or next)
+  const current = milestones.find((m) => m.week >= week && m.expectedFollowers != null);
+  const past = [...milestones].reverse().find((m) => m.week <= week && m.expectedFollowers != null);
+
+  const target = current || past;
+  if (!target || target.expectedFollowers == null) return null;
+
+  const diff = latest - target.expectedFollowers;
+  const threshold = Math.max(target.expectedFollowers * 0.1, 20); // 10% or min 20
+
+  if (diff > threshold) return 'exceeding';
+  if (diff < -threshold) return 'lagging';
+  return 'on-track';
+}
+
+export function getFollowerGrowth(plan: GrowthPlan): number | null {
+  const latest = getLatestFollowerCount(plan);
+  const initial = plan.initialFollowers;
+  if (latest === null || initial == null) return null;
+  return latest - initial;
+}
+
+export function getCurrentMilestoneTarget(plan: GrowthPlan): number | null {
+  const week = getCurrentWeek(plan);
+  const milestones = plan.plan.milestones || [];
+  const current = milestones.find((m) => m.week >= week && m.expectedFollowers != null);
+  return current?.expectedFollowers ?? null;
 }

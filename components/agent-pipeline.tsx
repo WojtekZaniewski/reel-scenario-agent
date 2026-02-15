@@ -8,9 +8,11 @@ import { PipelineProgress, type PipelineStep, type StepState } from "@/component
 import { ScenarioDisplay } from "@/components/scenario-display"
 import { saveScenario } from "@/lib/storage"
 import { getProfile, updateProfileFromBrief, updateProfileFeedback } from "@/lib/profile-storage"
+import { getGrowthPlan, getFollowerTrend, getLatestFollowerCount, getCurrentWeek, getCurrentMilestoneTarget } from "@/lib/planner-storage"
 import type { Brief } from "@/types/brief"
 import type { ScenarioAIResponse } from "@/lib/ai/types"
 import type { UserProfile } from "@/types/user-profile"
+import type { GrowthContext } from "@/lib/ai/prompts"
 
 const INITIAL_STEPS: Record<PipelineStep, StepState> = {
   accounts: { status: "waiting" },
@@ -64,11 +66,29 @@ export function AgentPipeline() {
     const currentProfile = getProfile()
     setProfile(currentProfile)
 
+    // Build growth context if plan is active
+    let growthCtx: GrowthContext | null = null
+    const activePlan = getGrowthPlan()
+    if (activePlan && activePlan.status === "active") {
+      const trend = getFollowerTrend(activePlan)
+      const current = getLatestFollowerCount(activePlan)
+      const target = getCurrentMilestoneTarget(activePlan)
+      if (trend && current !== null && target !== null) {
+        growthCtx = {
+          trend,
+          currentFollowers: current,
+          targetFollowers: target,
+          weekNumber: getCurrentWeek(activePlan),
+          totalWeeks: activePlan.durationWeeks,
+        }
+      }
+    }
+
     try {
       const res = await fetch("/api/run-pipeline", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ brief, profile: currentProfile }),
+        body: JSON.stringify({ brief, profile: currentProfile, growthContext: growthCtx }),
       })
 
       if (!res.ok) {

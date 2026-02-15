@@ -2,15 +2,16 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { Check, Film } from "lucide-react"
+import { Check, Film, TrendingUp, TrendingDown, Minus } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { getGrowthPlan, shouldPostToday, isTodayCompleted, markTodayCompleted, getCurrentWeek } from "@/lib/planner-storage"
+import { getGrowthPlan, shouldPostToday, isTodayCompleted, markTodayCompleted, getCurrentWeek, getFollowerTrend, getFollowerGrowth } from "@/lib/planner-storage"
 import { toast } from "sonner"
 
 export function PlannerBanner() {
   const [visible, setVisible] = useState(false)
   const [done, setDone] = useState(false)
   const [info, setInfo] = useState({ goal: "", week: 0, totalWeeks: 0 })
+  const [trendInfo, setTrendInfo] = useState<{ trend: string; growth: number | null } | null>(null)
 
   useEffect(() => {
     const plan = getGrowthPlan()
@@ -26,6 +27,10 @@ export function PlannerBanner() {
       week: getCurrentWeek(plan),
       totalWeeks: plan.durationWeeks,
     })
+
+    const trend = getFollowerTrend(plan)
+    const growth = getFollowerGrowth(plan)
+    if (trend) setTrendInfo({ trend, growth })
   }, [])
 
   if (!visible) return null
@@ -47,6 +52,18 @@ export function PlannerBanner() {
             <p className="text-sm font-medium text-green-400">Rolka wrzucona!</p>
             <p className="text-xs text-muted-foreground">
               {info.goal} — Tydzień {info.week}/{info.totalWeeks}
+              {trendInfo && (
+                <span className={`ml-1.5 inline-flex items-center gap-0.5 ${
+                  trendInfo.trend === "exceeding" ? "text-green-500"
+                  : trendInfo.trend === "on-track" ? "text-yellow-500"
+                  : "text-red-500"
+                }`}>
+                  {trendInfo.trend === "exceeding" ? <TrendingUp className="inline h-3 w-3" /> : trendInfo.trend === "lagging" ? <TrendingDown className="inline h-3 w-3" /> : <Minus className="inline h-3 w-3" />}
+                  {trendInfo.growth !== null && trendInfo.growth !== 0 && (
+                    <span>{trendInfo.growth > 0 ? "+" : ""}{trendInfo.growth}</span>
+                  )}
+                </span>
+              )}
             </p>
           </div>
         </div>
@@ -69,6 +86,18 @@ export function PlannerBanner() {
           <p className="text-sm font-medium">Czas na nową rolkę!</p>
           <p className="text-xs text-muted-foreground">
             {info.goal} — Tydzień {info.week}/{info.totalWeeks}
+            {trendInfo && (
+              <span className={`ml-1.5 inline-flex items-center gap-0.5 ${
+                trendInfo.trend === "exceeding" ? "text-green-500"
+                : trendInfo.trend === "on-track" ? "text-yellow-500"
+                : "text-red-500"
+              }`}>
+                {trendInfo.trend === "exceeding" ? <TrendingUp className="inline h-3 w-3" /> : trendInfo.trend === "lagging" ? <TrendingDown className="inline h-3 w-3" /> : <Minus className="inline h-3 w-3" />}
+                {trendInfo.growth !== null && trendInfo.growth !== 0 && (
+                  <span>{trendInfo.growth > 0 ? "+" : ""}{trendInfo.growth}</span>
+                )}
+              </span>
+            )}
           </p>
         </div>
       </div>

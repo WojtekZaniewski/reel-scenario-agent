@@ -15,6 +15,15 @@ export interface GrowthPlan {
   notificationTime: string;
   status: 'active' | 'completed' | 'paused';
   createdAt: string;
+
+  initialFollowers?: number;
+  followerLog: FollowerEntry[];
+}
+
+export interface FollowerEntry {
+  date: string;
+  count: number;
+  weekNumber: number;
 }
 
 export interface GrowthPlanAI {
@@ -39,6 +48,7 @@ export interface Milestone {
   target: string;
   metric: string;
   checkpoints: string[];
+  expectedFollowers?: number;
 }
 
 export interface DifficultyOption {

@@ -7,11 +7,12 @@ import { GrowthPlanAI } from '@/types/growth-plan';
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { goal, industry, notes, profile } = body as {
+  const { goal, industry, notes, profile, currentFollowers } = body as {
     goal: string;
     industry: string;
     notes?: string;
     profile?: UserProfile | null;
+    currentFollowers?: number;
   };
 
   if (!goal?.trim()) {
@@ -22,7 +23,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const prompt = buildGrowthPlanPrompt(goal, industry, notes || '', profile);
+    const prompt = buildGrowthPlanPrompt(goal, industry, notes || '', profile, currentFollowers);
     const { text } = await generateText({
       model: google('gemini-2.5-flash'),
       prompt,
