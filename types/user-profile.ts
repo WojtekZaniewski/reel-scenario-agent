@@ -11,4 +11,12 @@ export interface UserProfile {
     negativeTopics: string[];
   };
   updatedAt: string;
+
+  // Karta członkowska
+  businessName: string;
+  businessDescription: string;
+  targetNiche: string;
+  uniqueSellingPoints: string;
+  contentGoals: string;
+  personalStyle: string;
 }

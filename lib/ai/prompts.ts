@@ -5,6 +5,12 @@ import { UserProfile } from '@/types/user-profile';
 function buildProfileContext(profile?: UserProfile | null): string {
   if (!profile) return '';
   const parts: string[] = [];
+  if (profile.businessName) parts.push(`- Firma: ${profile.businessName}`);
+  if (profile.businessDescription) parts.push(`- Opis: ${profile.businessDescription}`);
+  if (profile.targetNiche) parts.push(`- Nisza: ${profile.targetNiche}`);
+  if (profile.uniqueSellingPoints) parts.push(`- USP: ${profile.uniqueSellingPoints}`);
+  if (profile.contentGoals) parts.push(`- Cel contentu: ${profile.contentGoals}`);
+  if (profile.personalStyle) parts.push(`- Styl: ${profile.personalStyle}`);
   if (profile.industry) parts.push(`- Branża: ${profile.industry}`);
   if (profile.preferredTones.length > 0) parts.push(`- Preferowane tony: ${profile.preferredTones.join(', ')}`);
   if (profile.preferredFormats.length > 0) parts.push(`- Najczęstsze formaty: ${profile.preferredFormats.join(', ')}`);
@@ -38,6 +44,7 @@ ZASADY:
 - Uwzględnij zarówno duże konta (influencerzy) jak i mniejsze biznesy z viralowymi treściami
 - Podaj same nazwy użytkowników BEZ znaku @
 - Skup się na kontach, które regularnie publikują Reelsy
+- WAŻNE: Podaj TYLKO konta, które na pewno istnieją. Lepiej podać mniej kont niż zmyślone nazwy.
 
 Odpowiedz WYŁĄCZNIE w formacie JSON:
 {
@@ -47,34 +54,25 @@ Odpowiedz WYŁĄCZNIE w formacie JSON:
 }
 
 export function buildScenarioPrompt(brief: Brief, reels: Reel[], profile?: UserProfile | null): string {
-  const reelsSummary = reels
-    .slice(0, 5)
-    .map(
-      (r, i) =>
-        `${i + 1}. [@${r.ownerUsername || 'nieznany'} | Viral Score: ${r.viralScore}/100 | Wyświetlenia: ${r.metrics.views.toLocaleString('pl-PL')} | Polubienia: ${r.metrics.likes.toLocaleString('pl-PL')}]
-   ${r.caption ? `Opis: ${r.caption.slice(0, 300)}${r.caption.length > 300 ? '...' : ''}` : '(brak opisu)'}`
-    )
-    .join('\n\n');
-
   const industry = brief.industry || 'beauty';
   const controversyDesc = brief.controversyLevel <= 2 ? 'bezpieczny, delikatny' : brief.controversyLevel === 3 ? 'zbalansowany' : 'odważny, kontrowersyjny';
   const lang = brief.language === 'en' ? 'angielskim' : 'polskim';
 
-  return `Jesteś ekspertem od tworzenia viralowych treści na Instagram Reels. Specjalizujesz się w inżynierii uwagi i psychologii viralowości.
+  const hasReels = reels.length > 0;
 
-BRIEF:
-- Zabieg/usługa: ${brief.treatment}
-- Branża: ${industry}
-- Grupa docelowa: ${brief.targetAudience}
-- Ton komunikacji: ${brief.tone}
-- Format Reela: ${brief.reelFormat === 'random' ? 'dobierz najlepszy format' : brief.reelFormat}
-- Długość: ${brief.duration}
-- Język: ${lang}
-- Poziom kontrowersji: ${brief.controversyLevel}/5 (${controversyDesc})
-${brief.notes ? `- Dodatkowe notatki: ${brief.notes}` : ''}
-${buildProfileContext(profile)}
+  const reelsSummary = hasReels
+    ? reels
+        .slice(0, 5)
+        .map(
+          (r, i) =>
+            `${i + 1}. [@${r.ownerUsername || 'nieznany'} | Viral Score: ${r.viralScore}/100 | Wyświetlenia: ${r.metrics.views.toLocaleString('pl-PL')} | Polubienia: ${r.metrics.likes.toLocaleString('pl-PL')}]
+   ${r.caption ? `Opis: ${r.caption.slice(0, 300)}${r.caption.length > 300 ? '...' : ''}` : '(brak opisu)'}`
+        )
+        .join('\n\n')
+    : '';
 
-TOP VIRALOWE REELSY Z NISZY:
+  const reelsSection = hasReels
+    ? `TOP VIRALOWE REELSY Z NISZY:
 ${reelsSummary}
 
 ---
@@ -91,7 +89,24 @@ Przeanalizuj każdy z powyższych Reelsów i dla każdego wyciągnij:
 - Dlaczego to działa? (Desire, Certainty, Trust — który element jest silny)
 
 ETAP 2: SCENARIUSZ REELA
-Na podstawie analizy stwórz scenariusz, kierując się tymi zasadami:
+Na podstawie analizy stwórz scenariusz, kierując się tymi zasadami:`
+    : `Nie udało się znaleźć viralowych Reelsów jako inspiracji. Stwórz scenariusz wyłącznie na podstawie swojej wiedzy o viralowych treściach w branży ${industry}, kierując się tymi zasadami:`;
+
+  return `Jesteś ekspertem od tworzenia viralowych treści na Instagram Reels. Specjalizujesz się w inżynierii uwagi i psychologii viralowości.
+
+BRIEF:
+- Zabieg/usługa: ${brief.treatment}
+- Branża: ${industry}
+- Grupa docelowa: ${brief.targetAudience}
+- Ton komunikacji: ${brief.tone}
+- Format Reela: ${brief.reelFormat === 'random' ? 'dobierz najlepszy format' : brief.reelFormat}
+- Długość: ${brief.duration}
+- Język: ${lang}
+- Poziom kontrowersji: ${brief.controversyLevel}/5 (${controversyDesc})
+${brief.notes ? `- Dodatkowe notatki: ${brief.notes}` : ''}
+${buildProfileContext(profile)}
+
+${reelsSection}
 
 ZASADY BUDOWANIA SCENARIUSZA:
 
@@ -123,7 +138,7 @@ CTA — ZASADY:
 
 Odpowiedz WYŁĄCZNIE w formacie JSON (bez żadnego tekstu poza JSON):
 {
-  "reelAnalyses": [
+  "reelAnalyses": [${hasReels ? `
     {
       "hookType": "typ hooka",
       "dominantEmotion": "dominująca emocja",
@@ -131,7 +146,7 @@ Odpowiedz WYŁĄCZNIE w formacie JSON (bez żadnego tekstu poza JSON):
       "attentionMechanism": "mechanizm zatrzymania uwagi",
       "commentInsights": "co triggeruje ludzi w komentarzach",
       "whyItWorks": "dlaczego to działa (DCT)"
-    }
+    }` : ''}
   ],
   "topic": "jasny temat w 1 zdaniu",
   "format": "Hook + Transformacja / Storytelling / Q&A / Kontrowersja / Before-After / POV",

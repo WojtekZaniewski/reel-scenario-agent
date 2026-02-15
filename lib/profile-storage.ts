@@ -13,7 +13,19 @@ function defaultProfile(): UserProfile {
     topicHistory: [],
     feedback: { positive: 0, negative: 0, positiveTopics: [], negativeTopics: [] },
     updatedAt: new Date().toISOString(),
+    businessName: '',
+    businessDescription: '',
+    targetNiche: '',
+    uniqueSellingPoints: '',
+    contentGoals: '',
+    personalStyle: '',
   };
+}
+
+export function initProfile(): UserProfile {
+  const profile = defaultProfile();
+  saveProfile(profile);
+  return profile;
 }
 
 export function getProfile(): UserProfile | null {

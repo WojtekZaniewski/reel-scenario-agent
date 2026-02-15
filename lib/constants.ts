@@ -4,6 +4,7 @@ export const INDUSTRY_OPTIONS = [
   { value: 'gastro', label: 'Gastronomia' },
   { value: 'ecommerce', label: 'E-commerce' },
   { value: 'local', label: 'Usługi lokalne' },
+  { value: 'marketing', label: 'Marketing / Agencja' },
   { value: 'other', label: 'Inna' },
 ];
 
