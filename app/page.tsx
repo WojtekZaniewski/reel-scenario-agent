@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
-import { Plus, Sparkles } from "lucide-react"
+import { Plus, Sparkles, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ScenarioCard } from "@/components/scenario-card"
 import { ScenarioDialog } from "@/components/scenario-dialog"
@@ -42,12 +42,19 @@ export default function DashboardPage() {
               AI Agent do generowania scenariuszy viralowych Reelsów
             </p>
           </div>
-          <Link href="/generate">
-            <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
-              <Plus className="mr-2 h-4 w-4" />
-              Nowy scenariusz
-            </Button>
-          </Link>
+          <div className="flex gap-2">
+            <Link href="/profile">
+              <Button variant="outline" size="icon">
+                <User className="h-4 w-4" />
+              </Button>
+            </Link>
+            <Link href="/generate">
+              <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
+                <Plus className="mr-2 h-4 w-4" />
+                Nowy scenariusz
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {scenarios.length === 0 ? (

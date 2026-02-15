@@ -1,11 +1,21 @@
 "use client"
 
+import { useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { Loader2, Sparkles } from "lucide-react"
-import { TONE_OPTIONS } from "@/lib/constants"
+import { Slider } from "@/components/ui/slider"
+import { Loader2, Sparkles, Shuffle } from "lucide-react"
+import {
+  INDUSTRY_OPTIONS,
+  TONE_OPTIONS,
+  FORMAT_OPTIONS,
+  DURATION_OPTIONS,
+  LANGUAGE_OPTIONS,
+  CONTROVERSY_LABELS,
+} from "@/lib/constants"
+import { getProfile } from "@/lib/profile-storage"
 import type { Brief } from "@/types/brief"
 
 interface BriefFormProps {
@@ -16,10 +26,51 @@ interface BriefFormProps {
 }
 
 export function BriefForm({ brief, onChange, onSubmit, isLoading }: BriefFormProps) {
+  useEffect(() => {
+    const profile = getProfile()
+    if (!profile) return
+    const updates: Partial<Brief> = {}
+    if (profile.industry && !brief.industry) updates.industry = profile.industry
+    if (profile.preferredTones.length > 0 && brief.tone === "edukacyjny") {
+      updates.tone = profile.preferredTones.slice(0, 2).join(",")
+    }
+    if (profile.preferredFormats.length > 0 && brief.reelFormat === "hook-transformation") {
+      updates.reelFormat = profile.preferredFormats[0]
+    }
+    if (Object.keys(updates).length > 0) {
+      onChange({ ...brief, ...updates })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     onSubmit()
   }
+
+  function toggleTone(tone: string) {
+    const current = brief.tone.split(",").filter(Boolean)
+    if (current.includes(tone)) {
+      onChange({ ...brief, tone: current.filter((t) => t !== tone).join(",") })
+    } else if (current.length < 2) {
+      onChange({ ...brief, tone: [...current, tone].join(",") })
+    }
+  }
+
+  function randomize() {
+    const randomFrom = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)]
+    const tones = TONE_OPTIONS.sort(() => Math.random() - 0.5).slice(0, 2)
+    onChange({
+      ...brief,
+      industry: randomFrom(INDUSTRY_OPTIONS.filter((o) => o.value !== "other")).value,
+      tone: tones.map((t) => t.value).join(","),
+      reelFormat: "random",
+      duration: randomFrom(DURATION_OPTIONS).value,
+      controversyLevel: Math.floor(Math.random() * 5) + 1,
+    })
+  }
+
+  const selectedTones = brief.tone.split(",").filter(Boolean)
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
@@ -38,6 +89,22 @@ export function BriefForm({ brief, onChange, onSubmit, isLoading }: BriefFormPro
       </div>
 
       <div className="flex flex-col gap-2">
+        <Label htmlFor="industry" className="text-sm font-medium text-foreground">
+          Branża
+        </Label>
+        <select
+          id="industry"
+          value={brief.industry}
+          onChange={(e) => onChange({ ...brief, industry: e.target.value })}
+          className="flex h-9 w-full rounded-md border border-border bg-card px-3 py-1 text-sm text-foreground shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        >
+          {INDUSTRY_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
+        </select>
+      </div>
+
+      <div className="flex flex-col gap-2">
         <Label htmlFor="targetAudience" className="text-sm font-medium text-foreground">
           Grupa docelowa
         </Label>
@@ -51,21 +118,96 @@ export function BriefForm({ brief, onChange, onSubmit, isLoading }: BriefFormPro
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor="tone" className="text-sm font-medium text-foreground">
-          Ton komunikacji
+        <Label className="text-sm font-medium text-foreground">
+          Ton komunikacji (max 2)
         </Label>
-        <select
-          id="tone"
-          value={brief.tone}
-          onChange={(e) => onChange({ ...brief, tone: e.target.value })}
-          className="flex h-9 w-full rounded-md border border-border bg-card px-3 py-1 text-sm text-foreground shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-        >
-          {TONE_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
+        <div className="flex flex-wrap gap-2">
+          {TONE_OPTIONS.map((o) => (
+            <button
+              key={o.value}
+              type="button"
+              onClick={() => toggleTone(o.value)}
+              className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${
+                selectedTones.includes(o.value)
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+              }`}
+            >
+              {o.label}
+            </button>
           ))}
-        </select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="reelFormat" className="text-sm font-medium text-foreground">
+            Format Reela
+          </Label>
+          <select
+            id="reelFormat"
+            value={brief.reelFormat}
+            onChange={(e) => onChange({ ...brief, reelFormat: e.target.value })}
+            className="flex h-9 w-full rounded-md border border-border bg-card px-3 py-1 text-sm text-foreground shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          >
+            {FORMAT_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="language" className="text-sm font-medium text-foreground">
+            Język
+          </Label>
+          <select
+            id="language"
+            value={brief.language}
+            onChange={(e) => onChange({ ...brief, language: e.target.value })}
+            className="flex h-9 w-full rounded-md border border-border bg-card px-3 py-1 text-sm text-foreground shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          >
+            {LANGUAGE_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <Label className="text-sm font-medium text-foreground">Długość</Label>
+        <div className="flex gap-3">
+          {DURATION_OPTIONS.map((o) => (
+            <label key={o.value} className="flex items-center gap-1.5 cursor-pointer">
+              <input
+                type="radio"
+                name="duration"
+                value={o.value}
+                checked={brief.duration === o.value}
+                onChange={(e) => onChange({ ...brief, duration: e.target.value })}
+                className="accent-primary"
+              />
+              <span className="text-sm text-foreground">{o.label}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <Label className="text-sm font-medium text-foreground">
+          Poziom kontrowersji: {CONTROVERSY_LABELS[brief.controversyLevel]}
+        </Label>
+        <Slider
+          value={[brief.controversyLevel]}
+          onValueChange={([v]) => onChange({ ...brief, controversyLevel: v })}
+          min={1}
+          max={5}
+          step={1}
+          className="w-full"
+        />
+        <div className="flex justify-between text-xs text-muted-foreground">
+          <span>Bezpieczny</span>
+          <span>Kontrowersyjny</span>
+        </div>
       </div>
 
       <div className="flex flex-col gap-2">
@@ -82,23 +224,29 @@ export function BriefForm({ brief, onChange, onSubmit, isLoading }: BriefFormPro
         />
       </div>
 
-      <Button
-        type="submit"
-        disabled={isLoading || !brief.treatment.trim()}
-        className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
-      >
-        {isLoading ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Agent pracuje...
-          </>
-        ) : (
-          <>
-            <Sparkles className="mr-2 h-4 w-4" />
-            Generuj scenariusz
-          </>
-        )}
-      </Button>
+      <div className="flex gap-2">
+        <Button type="button" variant="outline" onClick={randomize} className="shrink-0">
+          <Shuffle className="mr-2 h-4 w-4" />
+          Losuj
+        </Button>
+        <Button
+          type="submit"
+          disabled={isLoading || !brief.treatment.trim()}
+          className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Agent pracuje...
+            </>
+          ) : (
+            <>
+              <Sparkles className="mr-2 h-4 w-4" />
+              Generuj scenariusz
+            </>
+          )}
+        </Button>
+      </div>
     </form>
   )
 }

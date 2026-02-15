@@ -7,6 +7,7 @@ import { fetchUserReels, fetchMediaByShortcode } from '@/lib/instagram/client';
 import { extractReelsFromResponse } from '@/lib/instagram/transform';
 import { Brief } from '@/types/brief';
 import { Reel } from '@/types/reel';
+import { UserProfile } from '@/types/user-profile';
 
 function sseEvent(data: Record<string, unknown>): string {
   return `data: ${JSON.stringify(data)}\n\n`;
@@ -14,7 +15,7 @@ function sseEvent(data: Record<string, unknown>): string {
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { brief } = body as { brief: Brief };
+  const { brief, profile } = body as { brief: Brief; profile?: UserProfile | null };
 
   if (!brief?.treatment) {
     return new Response(
@@ -34,7 +35,7 @@ export async function POST(request: NextRequest) {
         // Step 1: Suggest accounts
         send({ step: 'accounts', status: 'running' });
 
-        const prompt = buildAccountSuggestionPrompt(brief);
+        const prompt = buildAccountSuggestionPrompt(brief, profile);
         const { text } = await generateText({
           model: google('gemini-2.5-flash'),
           prompt,
@@ -122,7 +123,7 @@ export async function POST(request: NextRequest) {
         // Step 4: Generate scenario (streaming)
         send({ step: 'scenario', status: 'running' });
 
-        const scenarioPrompt = buildScenarioPrompt(brief, enrichedReels);
+        const scenarioPrompt = buildScenarioPrompt(brief, enrichedReels, profile);
         const result = streamText({
           model: google('gemini-2.5-flash'),
           prompt: scenarioPrompt,
@@ -150,10 +151,26 @@ export async function POST(request: NextRequest) {
             status: 'done',
             data: {
               scenario: {
+                reelAnalyses: [],
+                topic: '',
+                format: '',
+                tone: '',
+                duration: '',
                 hook: fullText,
+                hookVisual: '',
+                hookRules: '',
                 mainContent: [],
+                mainContentRules: '',
                 cta: '',
+                ctaPunchline: '',
                 musicMood: '',
+                subtitleStyle: '',
+                cameraWork: '',
+                estimatedRecordingTime: '',
+                viralPotential: '',
+                viralReason: '',
+                bestPublishTime: '',
+                needsFollowUp: false,
                 filmingTips: [],
                 estimatedDuration: '',
                 patterns: [],

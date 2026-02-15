@@ -1,14 +1,16 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { BriefForm } from "@/components/brief-form"
 import { PipelineProgress, type PipelineStep, type StepState } from "@/components/pipeline-progress"
 import { ScenarioDisplay } from "@/components/scenario-display"
 import { saveScenario } from "@/lib/storage"
+import { getProfile, updateProfileFromBrief, updateProfileFeedback } from "@/lib/profile-storage"
 import type { Brief } from "@/types/brief"
 import type { ScenarioAIResponse } from "@/lib/ai/types"
+import type { UserProfile } from "@/types/user-profile"
 
 const INITIAL_STEPS: Record<PipelineStep, StepState> = {
   accounts: { status: "waiting" },
@@ -23,8 +25,14 @@ export function AgentPipeline() {
     treatment: "",
     targetAudience: "",
     tone: "profesjonalny",
+    industry: "beauty",
+    reelFormat: "hook-transformation",
+    duration: "30s",
+    language: "pl",
+    controversyLevel: 3,
   })
 
+  const [profile, setProfile] = useState<UserProfile | null>(null)
   const [isRunning, setIsRunning] = useState(false)
   const [steps, setSteps] = useState<Record<PipelineStep, StepState>>(INITIAL_STEPS)
   const [scenario, setScenario] = useState<ScenarioAIResponse | null>(null)
@@ -34,6 +42,11 @@ export function AgentPipeline() {
   const [pipelineReelsUsed, setPipelineReelsUsed] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(true)
+
+  useEffect(() => {
+    const p = getProfile()
+    if (p) setProfile(p)
+  }, [])
 
   const runPipeline = useCallback(async () => {
     setIsRunning(true)
@@ -46,11 +59,16 @@ export function AgentPipeline() {
     setPipelineReelsUsed(0)
     setError(null)
 
+    // Update profile from brief
+    updateProfileFromBrief(brief)
+    const currentProfile = getProfile()
+    setProfile(currentProfile)
+
     try {
       const res = await fetch("/api/run-pipeline", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ brief }),
+        body: JSON.stringify({ brief, profile: currentProfile }),
       })
 
       if (!res.ok) {
@@ -159,6 +177,15 @@ export function AgentPipeline() {
     setError(null)
   }, [])
 
+  const handleFeedback = useCallback(
+    (positive: boolean) => {
+      updateProfileFeedback(brief.treatment, positive)
+      setProfile(getProfile())
+      toast.success(positive ? "Dzięki za feedback!" : "Zapamiętam na przyszłość")
+    },
+    [brief.treatment]
+  )
+
   const pipelineStarted = !showForm
 
   return (
@@ -206,6 +233,7 @@ export function AgentPipeline() {
           isStreaming={isStreaming}
           onSave={scenario ? handleSave : undefined}
           onRegenerate={handleRegenerate}
+          onFeedback={scenario ? handleFeedback : undefined}
         />
       )}
     </div>

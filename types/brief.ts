@@ -3,4 +3,9 @@ export interface Brief {
   targetAudience: string;
   tone: string;
   notes?: string;
+  industry: string;
+  reelFormat: string;
+  duration: string;
+  language: string;
+  controversyLevel: number;
 }

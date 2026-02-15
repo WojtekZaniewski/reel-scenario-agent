@@ -9,4 +9,5 @@ export interface SavedScenario {
   accounts: string[];
   reelsUsed: number;
   createdAt: string;
+  feedback?: 'positive' | 'negative';
 }
