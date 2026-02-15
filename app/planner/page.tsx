@@ -391,15 +391,15 @@ export default function PlannerPage() {
               return (
                 <div
                   key={i}
-                  className={`flex items-center gap-3 rounded-lg p-2.5 text-sm ${
+                  className={`flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 rounded-lg p-2.5 text-sm ${
                     isToday ? "bg-primary/10 border border-primary/20" : "bg-muted/30"
                   }`}
                 >
-                  <span className={`font-medium min-w-[90px] ${isToday ? "text-primary" : "text-foreground"}`}>
+                  <span className={`font-medium sm:min-w-[90px] ${isToday ? "text-primary" : "text-foreground"}`}>
                     {task.day}
                   </span>
                   <span className="text-muted-foreground flex-1">{task.action}</span>
-                  <Badge variant="secondary" className="text-xs shrink-0">{task.contentType}</Badge>
+                  <Badge variant="secondary" className="text-xs shrink-0 w-fit">{task.contentType}</Badge>
                 </div>
               )
             })}
@@ -432,9 +432,9 @@ export default function PlannerPage() {
                   }`}>
                     {isPast ? <Check className="h-3 w-3" /> : m.week}
                   </div>
-                  <div>
-                    <p className="font-medium text-foreground">Tydz. {m.week}: {m.target}</p>
-                    <p className="text-xs text-muted-foreground">{m.metric}</p>
+                  <div className="min-w-0">
+                    <p className="font-medium text-foreground break-words">Tydz. {m.week}: {m.target}</p>
+                    <p className="text-xs text-muted-foreground break-words">{m.metric}</p>
                   </div>
                 </div>
               )
@@ -459,7 +459,7 @@ export default function PlannerPage() {
         {plan.plan.tips.length > 0 && (
           <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
             <h3 className="text-sm font-semibold text-foreground mb-2">Wskazówki</h3>
-            <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+            <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground break-words">
               {plan.plan.tips.map((t, i) => <li key={i}>{t}</li>)}
             </ul>
           </div>
@@ -482,7 +482,7 @@ export default function PlannerPage() {
                   type="time"
                   value={plan.notificationTime}
                   onChange={(e) => handleTimeChange(e.target.value)}
-                  className="h-8 rounded-md border border-border bg-card px-2 text-sm text-foreground"
+                  className="h-8 w-24 shrink-0 rounded-md border border-border bg-card px-2 text-sm text-foreground"
                 />
               )}
               <Button

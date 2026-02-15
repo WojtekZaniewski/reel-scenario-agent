@@ -138,7 +138,7 @@ ${scenario.patterns.map((p) => `• ${p}`).join("\n")}
     <div className="flex flex-col gap-4 print:gap-2" id="scenario-print">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 print:hidden">
         <h3 className="text-lg font-semibold text-foreground">Wygenerowany scenariusz</h3>
-        <div className="flex flex-wrap gap-1">
+        <div className="flex flex-wrap gap-1.5 sm:gap-1">
           <Button
             variant="ghost"
             size="sm"
@@ -276,7 +276,7 @@ ${scenario.patterns.map((p) => `• ${p}`).join("\n")}
           <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Notatki produkcyjne
           </span>
-          <div className="grid gap-2 text-sm text-foreground sm:grid-cols-2">
+          <div className="grid gap-3 sm:gap-2 text-sm text-foreground sm:grid-cols-2">
             <div>
               <span className="text-xs text-muted-foreground">Muzyka</span>
               <p>{scenario.musicMood}</p>

@@ -137,7 +137,7 @@ export default function ProfilePage() {
             Dashboard
           </Link>
           <div className="flex flex-col gap-1">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
               Twój profil
             </h1>
             <p className="text-sm text-muted-foreground">
@@ -226,7 +226,7 @@ export default function ProfilePage() {
             {/* Statystyki */}
             <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
               <h3 className="text-sm font-semibold text-foreground mb-3">Statystyki</h3>
-              <div className="grid grid-cols-3 gap-2 sm:gap-4 text-center">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-center">
                 <div>
                   <p className="text-2xl font-bold text-foreground">{profile.generationCount}</p>
                   <p className="text-xs text-muted-foreground">Scenariuszy</p>
@@ -249,7 +249,7 @@ export default function ProfilePage() {
                   <BarChart3 className="h-4 w-4 text-muted-foreground" />
                   <h3 className="text-sm font-semibold text-foreground">Podsumowanie generowań</h3>
                 </div>
-                <div className="grid grid-cols-2 gap-2 sm:gap-3 text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 text-sm">
                   {stats.topIndustry && (
                     <div>
                       <p className="text-xs text-muted-foreground">Najczęstsza branża</p>
