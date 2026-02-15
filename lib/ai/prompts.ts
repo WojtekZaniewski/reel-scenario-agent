@@ -1,6 +1,7 @@
 import { Brief } from '@/types/brief';
 import { Reel } from '@/types/reel';
 import { UserProfile } from '@/types/user-profile';
+import type { GrowthPlanAI } from '@/types/growth-plan';
 
 function buildProfileContext(profile?: UserProfile | null): string {
   if (!profile) return '';
@@ -178,4 +179,101 @@ Odpowiedz WYŁĄCZNIE w formacie JSON (bez żadnego tekstu poza JSON):
 }
 
 Zawsze odpowiadaj WYŁĄCZNIE w powyższym formacie JSON. Nie dodawaj niczego poza tym schematem.`;
+}
+
+export function buildGrowthPlanPrompt(
+  goal: string,
+  industry: string,
+  notes: string,
+  profile?: UserProfile | null
+): string {
+  const profileCtx = buildProfileContext(profile);
+  const generationInfo = profile
+    ? `\nDOTYCHCZASOWA AKTYWNOŚĆ:
+- Wygenerowanych scenariuszy: ${profile.generationCount}
+- Ostatnie tematy: ${profile.topicHistory.slice(0, 5).join(', ') || 'brak'}
+- Pozytywne oceny: ${profile.feedback.positive}, Negatywne: ${profile.feedback.negative}`
+    : '';
+
+  return `Jesteś ekspertem od strategii wzrostu na Instagramie. Tworzysz realistyczne plany rozwoju kont oparte na PRAWDZIWYCH statystykach i benchmarkach.
+
+CEL UŻYTKOWNIKA: ${goal}
+BRANŻA: ${industry}
+${notes ? `DODATKOWE INFO: ${notes}` : ''}
+${profileCtx}
+${generationInfo}
+
+REALNE STATYSTYKI INSTAGRAMA (2024-2025) — UŻYWAJ ICH:
+- Konto 0-1K followers: realistyczny wzrost 50-200 obs/miesiąc przy regularnym postingu 3-5 Reelsów/tydzień
+- Konto 1K-10K: wzrost 200-1000 obs/miesiąc przy 4-5 Reelsów/tydzień + Stories codziennie
+- Konto 10K-50K: wzrost 500-3000 obs/miesiąc przy profesjonalnym contencie
+- Engagement rate benchmark: micro (<10K) = 3-8%, small (10-50K) = 1-5%, medium (50-500K) = 0.5-3%
+- Reelsy z hookiem w pierwszych 3 sekundach mają 2-3x więcej wyświetleń
+- Najlepsze godziny publikacji: 8-10 rano, 12-14, 18-21 (zależy od niszy)
+- Optymalny posting: 3-5 Reelsów/tydzień (codziennie może obniżyć jakość)
+- Pierwszy viralowy Reel: typowo po 20-50 opublikowanych (nie gwarantowane)
+- 80% ruchu organicznego z Reelsów, 15% ze Stories, 5% z postów statycznych
+- Czas na zbudowanie zaangażowanej społeczności: minimum 3-6 miesięcy
+- Konwersja obserwujących na klientów: typowo 1-3% (zależy od niszy i oferty)
+
+TWOJE ZADANIE:
+1. Oceń cel użytkownika pod kątem realizmu
+2. Stwórz plan z TRZEMA wariantami trudności (łatwy, średni, trudny)
+3. Dla każdego wariantu podaj realistyczny czas realizacji i wymagany wysiłek
+4. Zaplanuj harmonogram tygodniowy (które dni tygodnia, co robić)
+5. Wyznacz kamienie milowe (co tydzień/co 2 tygodnie)
+6. Zaproponuj 3-4 filary contentu dopasowane do branży i celu
+
+ZASADY:
+- Bądź BRUTALNIE SZCZERY. Nie obiecuj viralowości. Nie obiecuj szybkiego wzrostu.
+- Jeśli cel jest nierealistyczny w podanym czasie, powiedz wprost i zaproponuj realistyczną alternatywę.
+- Harmonogram tygodniowy powinien uwzględniać dni odpoczynku (nie codziennie!)
+- Każdy milestone powinien być mierzalny i konkretny
+
+Odpowiedz WYŁĄCZNIE w formacie JSON:
+{
+  "summary": "2-3 zdania o planie i ocenie celu",
+  "weeklySchedule": [
+    { "day": "Poniedziałek", "action": "co zrobić", "contentType": "typ contentu" },
+    { "day": "Środa", "action": "co zrobić", "contentType": "typ contentu" },
+    { "day": "Piątek", "action": "co zrobić", "contentType": "typ contentu" }
+  ],
+  "milestones": [
+    {
+      "week": 2,
+      "target": "konkretny cel na ten tydzień",
+      "metric": "co mierzyć",
+      "checkpoints": ["co sprawdzić 1", "co sprawdzić 2"]
+    }
+  ],
+  "contentPillars": ["filar 1", "filar 2", "filar 3"],
+  "bestPostingTimes": ["8:00-10:00", "18:00-20:00"],
+  "expectedGrowth": "realistyczny opis oczekiwanego wzrostu z liczbami",
+  "tips": ["wskazówka 1", "wskazówka 2", "wskazówka 3"],
+  "difficultyOptions": [
+    {
+      "level": "easy",
+      "label": "Spokojne tempo",
+      "durationWeeks": 12,
+      "reelsPerWeek": 3,
+      "description": "3 Reelsy tygodniowo, mniej presji, dłuższy czas na cel"
+    },
+    {
+      "level": "medium",
+      "label": "Zbalansowany",
+      "durationWeeks": 8,
+      "reelsPerWeek": 4,
+      "description": "4 Reelsy tygodniowo, regularny wysiłek"
+    },
+    {
+      "level": "hard",
+      "label": "Intensywny",
+      "durationWeeks": 5,
+      "reelsPerWeek": 6,
+      "description": "6 Reelsów tygodniowo, maksymalne tempo, wymaga dyscypliny"
+    }
+  ]
+}
+
+Zawsze odpowiadaj WYŁĄCZNIE w powyższym formacie JSON.`;
 }

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next"
 import { Geist } from "next/font/google"
 import { Toaster } from "sonner"
+import { NotificationChecker } from "@/components/notification-checker"
 import "./globals.css"
 
 const geist = Geist({
@@ -46,6 +47,7 @@ export default function RootLayout({
       <body className={`${geist.variable} font-sans antialiased`}>
         {children}
         <Toaster position="top-center" richColors />
+        <NotificationChecker />
       </body>
     </html>
   )

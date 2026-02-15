@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
-import { Plus, Sparkles, User } from "lucide-react"
+import { Plus, Sparkles, Target, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ScenarioCard } from "@/components/scenario-card"
 import { ScenarioDialog } from "@/components/scenario-dialog"
+import { PlannerBanner } from "@/components/planner-banner"
 import { getScenarios, deleteScenario } from "@/lib/storage"
 import type { SavedScenario } from "@/types/saved-scenario"
 import { toast } from "sonner"
@@ -33,6 +34,8 @@ export default function DashboardPage() {
   return (
     <main className="flex min-h-screen items-start justify-center px-4 py-10 sm:py-16">
       <div className="w-full max-w-2xl flex flex-col gap-8">
+        <PlannerBanner />
+
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex flex-col gap-1">
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
@@ -46,6 +49,11 @@ export default function DashboardPage() {
             <Link href="/profile">
               <Button variant="outline" size="icon">
                 <User className="h-4 w-4" />
+              </Button>
+            </Link>
+            <Link href="/planner">
+              <Button variant="outline" size="icon">
+                <Target className="h-4 w-4" />
               </Button>
             </Link>
             <Link href="/generate">
