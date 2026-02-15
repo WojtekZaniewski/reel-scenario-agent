@@ -66,7 +66,7 @@ function StepDetails({ step, data }: { step: PipelineStep; data?: Record<string,
   if (!content) return null
 
   return (
-    <div className="ml-8 mt-1">
+    <div className="ml-4 sm:ml-8 mt-1">
       <button
         type="button"
         onClick={() => setOpen(!open)}

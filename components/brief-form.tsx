@@ -150,7 +150,7 @@ export function BriefForm({ brief, onChange, onSubmit, isLoading }: BriefFormPro
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
         <div className="flex flex-col gap-2">
           <Label htmlFor="reelFormat" className="text-sm font-medium text-foreground">
             Format Reela
@@ -186,7 +186,7 @@ export function BriefForm({ brief, onChange, onSubmit, isLoading }: BriefFormPro
 
       <div className="flex flex-col gap-2">
         <Label className="text-sm font-medium text-foreground">Długość</Label>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-2 sm:gap-3">
           {DURATION_OPTIONS.map((o) => (
             <label key={o.value} className="flex items-center gap-1.5 cursor-pointer">
               <input
@@ -235,19 +235,21 @@ export function BriefForm({ brief, onChange, onSubmit, isLoading }: BriefFormPro
         />
       </div>
 
-      <div className="flex gap-2">
-        <Button type="button" variant="outline" onClick={suggestFromLiked} className="shrink-0">
-          <Heart className="mr-2 h-4 w-4" />
-          Z polubionych
-        </Button>
-        <Button type="button" variant="outline" onClick={randomize} className="shrink-0">
-          <Shuffle className="mr-2 h-4 w-4" />
-          Losuj
-        </Button>
+      <div className="flex flex-col sm:flex-row gap-2">
+        <div className="flex gap-2">
+          <Button type="button" variant="outline" onClick={suggestFromLiked} className="flex-1 sm:flex-initial">
+            <Heart className="mr-2 h-4 w-4" />
+            Z polubionych
+          </Button>
+          <Button type="button" variant="outline" onClick={randomize} className="flex-1 sm:flex-initial">
+            <Shuffle className="mr-2 h-4 w-4" />
+            Losuj
+          </Button>
+        </div>
         <Button
           type="submit"
           disabled={isLoading || !brief.treatment.trim()}
-          className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
+          className="w-full sm:flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
         >
           {isLoading ? (
             <>

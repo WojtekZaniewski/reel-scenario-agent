@@ -33,9 +33,9 @@ export default function DashboardPage() {
   return (
     <main className="flex min-h-screen items-start justify-center px-4 py-10 sm:py-16">
       <div className="w-full max-w-2xl flex flex-col gap-8">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex flex-col gap-1">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
               Reel Scenario Agent
             </h1>
             <p className="text-sm text-muted-foreground">
@@ -58,7 +58,7 @@ export default function DashboardPage() {
         </div>
 
         {scenarios.length === 0 ? (
-          <div className="flex flex-col items-center gap-4 rounded-xl border border-dashed border-border bg-card/50 p-12 text-center">
+          <div className="flex flex-col items-center gap-4 rounded-xl border border-dashed border-border bg-card/50 p-6 sm:p-12 text-center">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
               <Sparkles className="h-6 w-6 text-muted-foreground" />
             </div>

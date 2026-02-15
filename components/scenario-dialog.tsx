@@ -107,7 +107,7 @@ ${s.patterns.map((p) => `• ${p}`).join("\n")}
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-lg max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{scenario.title}</DialogTitle>
           <div className="flex flex-wrap gap-2 pt-1">
@@ -246,8 +246,8 @@ ${s.patterns.map((p) => `• ${p}`).join("\n")}
           )}
         </div>
 
-        <div className="flex gap-2 pt-4 border-t border-border">
-          <Button variant="outline" size="sm" onClick={handleCopy}>
+        <div className="flex flex-wrap gap-2 pt-4 border-t border-border">
+          <Button variant="outline" size="sm" onClick={handleCopy} className="flex-1 sm:flex-initial">
             {copied ? (
               <>
                 <Check className="mr-1.5 h-4 w-4" />
@@ -260,7 +260,7 @@ ${s.patterns.map((p) => `• ${p}`).join("\n")}
               </>
             )}
           </Button>
-          <Button variant="outline" size="sm" onClick={handleDownload}>
+          <Button variant="outline" size="sm" onClick={handleDownload} className="flex-1 sm:flex-initial">
             <Download className="mr-1.5 h-4 w-4" />
             TXT
           </Button>
@@ -268,7 +268,7 @@ ${s.patterns.map((p) => `• ${p}`).join("\n")}
             variant="outline"
             size="sm"
             onClick={handleDelete}
-            className="ml-auto text-destructive hover:text-destructive"
+            className="w-full sm:w-auto sm:ml-auto text-destructive hover:text-destructive"
           >
             <Trash2 className="mr-1.5 h-4 w-4" />
             Usuń

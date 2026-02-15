@@ -20,7 +20,7 @@ export function ScenarioFeedback({ currentFeedback, onFeedback }: ScenarioFeedba
   }
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex flex-wrap items-center gap-2 sm:gap-3">
       <span className="text-xs text-muted-foreground">Oceń scenariusz:</span>
       <Button
         type="button"

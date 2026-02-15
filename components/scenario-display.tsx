@@ -136,9 +136,9 @@ ${scenario.patterns.map((p) => `• ${p}`).join("\n")}
 
   return (
     <div className="flex flex-col gap-4 print:gap-2" id="scenario-print">
-      <div className="flex items-center justify-between print:hidden">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 print:hidden">
         <h3 className="text-lg font-semibold text-foreground">Wygenerowany scenariusz</h3>
-        <div className="flex gap-1">
+        <div className="flex flex-wrap gap-1">
           <Button
             variant="ghost"
             size="sm"
@@ -362,14 +362,14 @@ ${scenario.patterns.map((p) => `• ${p}`).join("\n")}
       )}
 
       {/* Akcje */}
-      <div className="flex gap-2 pt-2 print:hidden">
+      <div className="flex flex-col sm:flex-row gap-2 pt-2 print:hidden">
         {onSave && (
-          <Button type="button" onClick={onSave} className="bg-primary text-primary-foreground hover:bg-primary/90">
+          <Button type="button" onClick={onSave} className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90">
             <Save className="mr-2 h-4 w-4" />
             Zapisz scenariusz
           </Button>
         )}
-        <Button type="button" variant="outline" onClick={onRegenerate}>
+        <Button type="button" variant="outline" onClick={onRegenerate} className="w-full sm:w-auto">
           <RefreshCw className="mr-2 h-4 w-4" />
           Generuj ponownie
         </Button>
