@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Slider } from "@/components/ui/slider"
-import { Loader2, Sparkles, Shuffle } from "lucide-react"
+import { Loader2, Sparkles, Shuffle, Heart } from "lucide-react"
+import { toast } from "sonner"
 import {
   INDUSTRY_OPTIONS,
   TONE_OPTIONS,
@@ -15,7 +16,7 @@ import {
   LANGUAGE_OPTIONS,
   CONTROVERSY_LABELS,
 } from "@/lib/constants"
-import { getProfile } from "@/lib/profile-storage"
+import { getProfile, suggestFromLikedScenarios } from "@/lib/profile-storage"
 import type { Brief } from "@/types/brief"
 
 interface BriefFormProps {
@@ -55,6 +56,16 @@ export function BriefForm({ brief, onChange, onSubmit, isLoading }: BriefFormPro
     } else if (current.length < 2) {
       onChange({ ...brief, tone: [...current, tone].join(",") })
     }
+  }
+
+  function suggestFromLiked() {
+    const suggestion = suggestFromLikedScenarios()
+    if (!suggestion) {
+      toast.info("Brak polubionych scenariuszy — oceń wygenerowane scenariusze, aby dostać sugestie")
+      return
+    }
+    onChange({ ...brief, ...suggestion })
+    toast.success("Ustawienia wypełnione na podstawie polubionych scenariuszy")
   }
 
   function randomize() {
@@ -225,6 +236,10 @@ export function BriefForm({ brief, onChange, onSubmit, isLoading }: BriefFormPro
       </div>
 
       <div className="flex gap-2">
+        <Button type="button" variant="outline" onClick={suggestFromLiked} className="shrink-0">
+          <Heart className="mr-2 h-4 w-4" />
+          Z polubionych
+        </Button>
         <Button type="button" variant="outline" onClick={randomize} className="shrink-0">
           <Shuffle className="mr-2 h-4 w-4" />
           Losuj
