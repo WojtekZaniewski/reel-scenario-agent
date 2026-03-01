@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { google } from '@ai-sdk/google';
 import { generateText, streamText } from 'ai';
-import { buildAccountSuggestionPrompt, buildScenarioPrompt, type GrowthContext } from '@/lib/ai/prompts';
+import { buildAccountSuggestionPrompt, buildScenarioPrompt, buildCarouselPrompt, buildPostPrompt, type GrowthContext } from '@/lib/ai/prompts';
 import { AccountSuggestionResponse } from '@/lib/ai/types';
 import { fetchUserReels, fetchMediaByShortcode } from '@/lib/instagram/client';
 import { extractReelsFromResponse } from '@/lib/instagram/transform';
@@ -83,7 +83,9 @@ export async function POST(request: NextRequest) {
       }
 
       try {
-        // Step 1: Suggest accounts
+        const contentType = brief.contentType || 'reel';
+
+        // Step 1: Suggest accounts (shared for all content types)
         send({ step: 'accounts', status: 'running' });
 
         const prompt = buildAccountSuggestionPrompt(brief, profile);
@@ -109,127 +111,155 @@ export async function POST(request: NextRequest) {
           data: { accounts, reasoning: parsed.reasoning },
         });
 
-        // Step 2: Scrape reels from accounts (try up to 8, extend to 10 if needed)
-        send({
-          step: 'reels',
-          status: 'running',
-          message: `Pobieram Reelsy z ${Math.min(accounts.length, 8)} kont...`,
-        });
+        if (contentType === 'reel') {
+          // --- REEL PIPELINE: accounts → reels → enrich → scenario ---
 
-        const allReels: Reel[] = [];
-        let successCount = 0;
-        let failCount = 0;
+          // Step 2: Scrape reels from accounts
+          send({
+            step: 'reels',
+            status: 'running',
+            message: `Pobieram Reelsy z ${Math.min(accounts.length, 8)} kont...`,
+          });
 
-        // First batch: try up to 8 accounts
-        const firstBatch = accounts.slice(0, 8);
-        for (const account of firstBatch) {
-          try {
-            send({ step: 'reels', status: 'running', message: `Scraping @${account}...` });
-            const data = await fetchUserReels(account);
-            const reels = extractReelsFromResponse(data, account);
-            allReels.push(...reels);
-            successCount++;
-            if (reels.length > 0) {
-              send({ step: 'reels', status: 'running', message: `@${account}: ${reels.length} reelsów` });
-            }
-          } catch (err) {
-            failCount++;
-            console.error(`Error scraping "${account}":`, err);
-            send({ step: 'reels', status: 'running', message: `@${account}: brak dostępu` });
-          }
-        }
+          const allReels: Reel[] = [];
+          let successCount = 0;
+          let failCount = 0;
 
-        // If too few reels, try remaining accounts
-        if (allReels.length < 3 && accounts.length > 8) {
-          const extraAccounts = accounts.slice(8);
-          for (const account of extraAccounts) {
+          const firstBatch = accounts.slice(0, 8);
+          for (const account of firstBatch) {
             try {
-              send({ step: 'reels', status: 'running', message: `Scraping @${account} (dodatkowe)...` });
+              send({ step: 'reels', status: 'running', message: `Scraping @${account}...` });
               const data = await fetchUserReels(account);
               const reels = extractReelsFromResponse(data, account);
               allReels.push(...reels);
               successCount++;
+              if (reels.length > 0) {
+                send({ step: 'reels', status: 'running', message: `@${account}: ${reels.length} reelsów` });
+              }
             } catch (err) {
               failCount++;
               console.error(`Error scraping "${account}":`, err);
+              send({ step: 'reels', status: 'running', message: `@${account}: brak dostępu` });
             }
           }
-        }
 
-        const uniqueReels = Array.from(
-          new Map(allReels.map((r) => [r.id, r])).values()
-        );
-
-        const sortedReels = uniqueReels
-          .sort((a, b) => b.viralScore - a.viralScore);
-
-        const topReels = sortedReels.slice(0, 5);
-
-        // Send reels done with stats
-        send({
-          step: 'reels',
-          status: 'done',
-          data: {
-            totalFound: sortedReels.length,
-            accountsScraped: successCount,
-            accountsFailed: failCount,
-            topReels: topReels.map((r) => ({
-              id: r.id,
-              shortcode: r.shortcode,
-              ownerUsername: r.ownerUsername,
-              viralScore: r.viralScore,
-              views: r.metrics.views,
-              likes: r.metrics.likes,
-            })),
-            ...(sortedReels.length === 0 && {
-              warning: 'Nie znaleziono Reelsów. Scenariusz zostanie wygenerowany bez inspiracji.',
-            }),
-          },
-        });
-
-        // Step 3: Enrich captions for top reels (skip if none)
-        if (topReels.length > 0) {
-          send({ step: 'enrich', status: 'running' });
-
-          const enrichedReels = await Promise.all(
-            topReels.map(async (reel) => {
+          if (allReels.length < 3 && accounts.length > 8) {
+            const extraAccounts = accounts.slice(8);
+            for (const account of extraAccounts) {
               try {
-                const media = await fetchMediaByShortcode(reel.shortcode);
-                return {
-                  ...reel,
-                  caption: media?.caption?.text || reel.caption,
-                };
-              } catch {
-                return reel;
+                send({ step: 'reels', status: 'running', message: `Scraping @${account} (dodatkowe)...` });
+                const data = await fetchUserReels(account);
+                const reels = extractReelsFromResponse(data, account);
+                allReels.push(...reels);
+                successCount++;
+              } catch (err) {
+                failCount++;
+                console.error(`Error scraping "${account}":`, err);
               }
-            })
-          );
-
-          send({ step: 'enrich', status: 'done' });
-
-          // Step 4: Generate scenario with reels
-          send({ step: 'scenario', status: 'running' });
-
-          const scenarioPrompt = buildScenarioPrompt(brief, enrichedReels, profile, growthContext);
-          const result = streamText({
-            model: google('gemini-2.5-flash'),
-            prompt: scenarioPrompt,
-            temperature: 0.8,
-          });
-
-          let fullText = '';
-          for await (const chunk of result.textStream) {
-            fullText += chunk;
-            send({ step: 'scenario', status: 'streaming', chunk });
+            }
           }
 
-          parseAndSendScenario(fullText, accounts, topReels.length, send);
-        } else {
-          // Skip enrichment, generate without reels
-          send({ step: 'enrich', status: 'done', data: { skipped: true } });
-          send({ step: 'scenario', status: 'running', message: 'Generuję scenariusz bez inspiracji z Reelsów...' });
+          const uniqueReels = Array.from(
+            new Map(allReels.map((r) => [r.id, r])).values()
+          );
 
-          const scenarioPrompt = buildScenarioPrompt(brief, [], profile, growthContext);
+          const sortedReels = uniqueReels
+            .sort((a, b) => b.viralScore - a.viralScore);
+
+          const topReels = sortedReels.slice(0, 5);
+
+          send({
+            step: 'reels',
+            status: 'done',
+            data: {
+              totalFound: sortedReels.length,
+              accountsScraped: successCount,
+              accountsFailed: failCount,
+              topReels: topReels.map((r) => ({
+                id: r.id,
+                shortcode: r.shortcode,
+                ownerUsername: r.ownerUsername,
+                viralScore: r.viralScore,
+                views: r.metrics.views,
+                likes: r.metrics.likes,
+              })),
+              ...(sortedReels.length === 0 && {
+                warning: 'Nie znaleziono Reelsów. Scenariusz zostanie wygenerowany bez inspiracji.',
+              }),
+            },
+          });
+
+          // Step 3: Enrich captions
+          if (topReels.length > 0) {
+            send({ step: 'enrich', status: 'running' });
+
+            const enrichedReels = await Promise.all(
+              topReels.map(async (reel) => {
+                try {
+                  const media = await fetchMediaByShortcode(reel.shortcode);
+                  return {
+                    ...reel,
+                    caption: media?.caption?.text || reel.caption,
+                  };
+                } catch {
+                  return reel;
+                }
+              })
+            );
+
+            send({ step: 'enrich', status: 'done' });
+
+            // Step 4: Generate scenario with reels
+            send({ step: 'scenario', status: 'running' });
+
+            const scenarioPrompt = buildScenarioPrompt(brief, enrichedReels, profile, growthContext);
+            const result = streamText({
+              model: google('gemini-2.5-flash'),
+              prompt: scenarioPrompt,
+              temperature: 0.8,
+            });
+
+            let fullText = '';
+            for await (const chunk of result.textStream) {
+              fullText += chunk;
+              send({ step: 'scenario', status: 'streaming', chunk });
+            }
+
+            parseAndSendScenario(fullText, accounts, topReels.length, send);
+          } else {
+            send({ step: 'enrich', status: 'done', data: { skipped: true } });
+            send({ step: 'scenario', status: 'running', message: 'Generuję scenariusz bez inspiracji z Reelsów...' });
+
+            const scenarioPrompt = buildScenarioPrompt(brief, [], profile, growthContext);
+            const result = streamText({
+              model: google('gemini-2.5-flash'),
+              prompt: scenarioPrompt,
+              temperature: 0.8,
+            });
+
+            let fullText = '';
+            for await (const chunk of result.textStream) {
+              fullText += chunk;
+              send({ step: 'scenario', status: 'streaming', chunk });
+            }
+
+            parseAndSendScenario(fullText, accounts, 0, send);
+          }
+        } else {
+          // --- CAROUSEL / POST PIPELINE: accounts → scenario (skip reels & enrich) ---
+
+          send({ step: 'reels', status: 'done', data: { skipped: true, totalFound: 0 } });
+          send({ step: 'enrich', status: 'done', data: { skipped: true } });
+          send({
+            step: 'scenario',
+            status: 'running',
+            message: contentType === 'carousel' ? 'Generuję karuzelę...' : 'Generuję post...',
+          });
+
+          const scenarioPrompt = contentType === 'carousel'
+            ? buildCarouselPrompt(brief, accounts, profile, growthContext)
+            : buildPostPrompt(brief, accounts, profile, growthContext);
+
           const result = streamText({
             model: google('gemini-2.5-flash'),
             prompt: scenarioPrompt,

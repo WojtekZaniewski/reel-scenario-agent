@@ -43,3 +43,31 @@ export const CONTROVERSY_LABELS: Record<number, string> = {
   4: 'Odważny',
   5: 'Kontrowersyjny',
 };
+
+export const CONTENT_TYPE_OPTIONS = [
+  { value: 'reel' as const, label: 'Rolka (Reel)' },
+  { value: 'carousel' as const, label: 'Karuzela' },
+  { value: 'post' as const, label: 'Post' },
+];
+
+export const CAROUSEL_FORMAT_OPTIONS = [
+  { value: 'educational', label: 'Edukacyjna' },
+  { value: 'tips-list', label: 'Lista porad' },
+  { value: 'storytelling', label: 'Storytelling' },
+  { value: 'before-after', label: 'Before-After' },
+  { value: 'random', label: 'Losowy' },
+];
+
+export const POST_FORMAT_OPTIONS = [
+  { value: 'educational', label: 'Edukacyjny' },
+  { value: 'inspirational', label: 'Inspirujący' },
+  { value: 'promotional', label: 'Promocyjny' },
+  { value: 'behind-scenes', label: 'Behind the scenes' },
+  { value: 'random', label: 'Losowy' },
+];
+
+export const SLIDE_COUNT_OPTIONS = [
+  { value: '5', label: '5 slajdów' },
+  { value: '7', label: '7 slajdów' },
+  { value: '10', label: '10 slajdów' },
+];

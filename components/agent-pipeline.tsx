@@ -24,6 +24,7 @@ const INITIAL_STEPS: Record<PipelineStep, StepState> = {
 export function AgentPipeline() {
   const router = useRouter()
   const [brief, setBrief] = useState<Brief>({
+    contentType: "reel",
     treatment: "",
     targetAudience: "",
     tone: "profesjonalny",
@@ -239,10 +240,10 @@ export function AgentPipeline() {
           <div className="flex flex-col gap-1 mb-4">
             <h3 className="text-sm font-semibold text-foreground">Agent pracuje</h3>
             <p className="text-xs text-muted-foreground">
-              Zabieg: {brief.treatment}
+              {brief.contentType === "carousel" ? "Karuzela" : brief.contentType === "post" ? "Post" : "Zabieg"}: {brief.treatment}
             </p>
           </div>
-          <PipelineProgress steps={steps} />
+          <PipelineProgress steps={steps} contentType={brief.contentType} />
         </div>
       )}
 

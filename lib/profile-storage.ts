@@ -69,9 +69,12 @@ export function updateProfileFromBrief(brief: Brief): void {
     profile.preferredTones = profile.preferredTones.slice(-5);
   }
 
-  // Track preferred formats
-  if (brief.reelFormat && brief.reelFormat !== 'random' && !profile.preferredFormats.includes(brief.reelFormat)) {
-    profile.preferredFormats.push(brief.reelFormat);
+  // Track preferred formats (use whichever format field is relevant)
+  const activeFormat = brief.contentType === 'carousel' ? brief.carouselFormat
+    : brief.contentType === 'post' ? brief.postFormat
+    : brief.reelFormat;
+  if (activeFormat && activeFormat !== 'random' && !profile.preferredFormats.includes(activeFormat)) {
+    profile.preferredFormats.push(activeFormat);
   }
   if (profile.preferredFormats.length > 5) {
     profile.preferredFormats = profile.preferredFormats.slice(-5);
@@ -172,7 +175,12 @@ export function suggestFromLikedScenarios(): Partial<Brief> | null {
   const audiences = briefs.map((b) => b.targetAudience).filter(Boolean);
   const targetAudience = mode(audiences);
 
+  // Content type — most common
+  const contentTypes = briefs.map((b) => b.contentType || 'reel').filter(Boolean);
+  const contentType = mode(contentTypes);
+
   const suggestion: Partial<Brief> = {};
+  if (contentType) suggestion.contentType = contentType;
   if (industry) suggestion.industry = industry;
   if (tone) suggestion.tone = tone;
   if (reelFormat) suggestion.reelFormat = reelFormat;

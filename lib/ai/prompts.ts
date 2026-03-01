@@ -25,10 +25,23 @@ function buildProfileContext(profile?: UserProfile | null): string {
 export function buildAccountSuggestionPrompt(brief: Brief, profile?: UserProfile | null): string {
   const industry = brief.industry || 'beauty';
   const lang = brief.language === 'en' ? 'angielskim' : 'polskim';
+  const contentType = brief.contentType || 'reel';
 
-  return `Jesteś ekspertem od Instagram Reels i marketingu w branży ${industry}.
+  const contentTypeDesc = contentType === 'reel'
+    ? 'viralowe Reelsy'
+    : contentType === 'carousel'
+      ? 'viralowe karuzele (carousel posts)'
+      : 'viralowe posty (single image posts)';
 
-Na podstawie poniższego briefu zaproponuj 6-10 kont Instagram (username), które tworzą viralowe Reelsy w tej niszy. Szukamy kont, które mogą posłużyć jako INSPIRACJA do stworzenia scenariusza Reela.
+  const contentTypeGoal = contentType === 'reel'
+    ? 'scenariusza Reela'
+    : contentType === 'carousel'
+      ? 'karuzeli na Instagram'
+      : 'posta na Instagram';
+
+  return `Jesteś ekspertem od Instagrama i marketingu w branży ${industry}.
+
+Na podstawie poniższego briefu zaproponuj 6-10 kont Instagram (username), które tworzą ${contentTypeDesc} w tej niszy. Szukamy kont, które mogą posłużyć jako INSPIRACJA do stworzenia ${contentTypeGoal}.
 
 BRIEF:
 - Zabieg/usługa: ${brief.treatment}
@@ -42,9 +55,9 @@ ${buildProfileContext(profile)}
 ZASADY:
 - Podawaj PRAWDZIWE konta Instagram, które istnieją i są aktywne
 - Mix polskich i zagranicznych kont z branży ${industry}
-- Uwzględnij zarówno duże konta (influencerzy) jak i mniejsze biznesy z viralowymi treściami
+- Uwzględnij zarówno duże konta jak i mniejsze biznesy z viralowymi treściami
 - Podaj same nazwy użytkowników BEZ znaku @
-- Skup się na kontach, które regularnie publikują Reelsy
+- Skup się na kontach, które regularnie publikują ${contentTypeDesc}
 - WAŻNE: Podaj TYLKO konta, które na pewno istnieją. Lepiej podać mniej kont niż zmyślone nazwy.
 
 Odpowiedz WYŁĄCZNIE w formacie JSON:
@@ -205,6 +218,173 @@ Odpowiedz WYŁĄCZNIE w formacie JSON (bez żadnego tekstu poza JSON):
 }
 
 Zawsze odpowiadaj WYŁĄCZNIE w powyższym formacie JSON. Nie dodawaj niczego poza tym schematem.`;
+}
+
+export function buildCarouselPrompt(
+  brief: Brief,
+  accounts: string[],
+  profile?: UserProfile | null,
+  growthContext?: GrowthContext | null
+): string {
+  const industry = brief.industry || 'beauty';
+  const controversyDesc = brief.controversyLevel <= 2 ? 'bezpieczny, delikatny' : brief.controversyLevel === 3 ? 'zbalansowany' : 'odważny, kontrowersyjny';
+  const lang = brief.language === 'en' ? 'angielskim' : 'polskim';
+  const numberOfSlides = brief.numberOfSlides || '7';
+  const format = brief.carouselFormat === 'random' ? 'dobierz najlepszy format' : brief.carouselFormat || 'educational';
+
+  return `Jesteś ekspertem od tworzenia viralowych karuzeli na Instagram. Specjalizujesz się w copywritingu, designie slajdów i psychologii viralowości.
+
+BRIEF:
+- Zabieg/usługa: ${brief.treatment}
+- Branża: ${industry}
+- Grupa docelowa: ${brief.targetAudience}
+- Ton komunikacji: ${brief.tone}
+- Format karuzeli: ${format}
+- Liczba slajdów: ${numberOfSlides}
+- Język: ${lang}
+- Poziom kontrowersji: ${brief.controversyLevel}/5 (${controversyDesc})
+${brief.notes ? `- Dodatkowe notatki: ${brief.notes}` : ''}
+${buildProfileContext(profile)}${buildGrowthContextSection(growthContext)}
+
+${accounts.length > 0 ? `KONTA INSPIRACYJNE (znalezione przez AI): ${accounts.map(a => '@' + a).join(', ')}
+Na podstawie tych kont i Twojej wiedzy o ich stylu karuzeli, stwórz oryginalną karuzelę.` : ''}
+
+ZASADY BUDOWANIA KARUZELI:
+
+1. Slajd 1 = HOOK — musi zatrzymać scrollowanie. Kontrowersyjne stwierdzenie, szokujące pytanie, obietnica wartości. BEZ logo, BEZ "Cześć". Wchodzimy jak młot.
+2. Slajdy 2-${parseInt(numberOfSlides) - 1} = WARTOŚĆ — każdy slajd = jedna myśl. Krótkie teksty. Duże nagłówki. Mini-nagrody co slajd.
+3. Ostatni slajd = CTA — zachęć do zapisu, udostępnienia, obserwowania. Otwarta pętla ciekawości.
+4. Spójna estetyka — jeden styl, kolory, typografia przez całą karuzelę.
+5. Czytelność — tekst musi być czytelny na telefonie. Max 30-40 słów na slajd.
+6. Wartość edukacyjna — każdy slajd powinien dostarczać samodzielną wartość.
+7. Buying Journey — karuzela trafia w konkretny etap: nieświadomy → świadomy problemu → świadomy rozwiązania → gotowy do działania.
+8. Kontrast — Stare vs nowe. Większość vs Ty. Mit vs prawda.
+
+Odpowiedz WYŁĄCZNIE w formacie JSON (bez żadnego tekstu poza JSON):
+{
+  "contentType": "carousel",
+  "topic": "jasny temat w 1 zdaniu",
+  "format": "Educational / Tips-list / Storytelling / Before-After",
+  "tone": "ton komunikacji",
+  "slides": [
+    {
+      "slideNumber": 1,
+      "headline": "nagłówek slajdu (HOOK — zatrzymuje scrollowanie)",
+      "content": "treść slajdu (max 40 słów)",
+      "visualDescription": "opis wizualny: tło, grafika, ikonki, układ"
+    },
+    {
+      "slideNumber": 2,
+      "headline": "nagłówek",
+      "content": "treść",
+      "visualDescription": "opis wizualny"
+    }
+  ],
+  "numberOfSlides": ${numberOfSlides},
+  "designStyle": "minimalistyczny / bold / elegancki / kolorowy",
+  "colorScheme": "np. ciemne tło + biały tekst + akcent pomarańczowy",
+  "typography": "np. nagłówki: bold sans-serif, treść: light sans-serif",
+  "captionText": "pełna treść caption pod karuzelą (z emoji, formatowaniem, min 100 słów)",
+  "hashtags": ["hashtag1", "hashtag2", "...do 15-20"],
+  "cta": "CTA na ostatnim slajdzie",
+  "ctaPunchline": "punchline + otwarta pętla ciekawości",
+  "viralPotential": "niski / średni / wysoki / viralowy",
+  "viralReason": "dlaczego ta karuzela ma potencjał viralowy",
+  "bestPublishTime": "dzień + godzina",
+  "needsFollowUp": true,
+  "followUpTopic": "temat części 2",
+  "patterns": ["wzorzec viralowości 1", "wzorzec 2"],
+  "reelAnalyses": [],
+  "hook": "",
+  "hookVisual": "",
+  "hookRules": "",
+  "mainContent": [],
+  "mainContentRules": "",
+  "musicMood": "",
+  "subtitleStyle": "",
+  "cameraWork": "",
+  "estimatedRecordingTime": "",
+  "filmingTips": [],
+  "estimatedDuration": "",
+  "duration": ""
+}
+
+Wygeneruj DOKŁADNIE ${numberOfSlides} slajdów. Zawsze odpowiadaj WYŁĄCZNIE w powyższym formacie JSON.`;
+}
+
+export function buildPostPrompt(
+  brief: Brief,
+  accounts: string[],
+  profile?: UserProfile | null,
+  growthContext?: GrowthContext | null
+): string {
+  const industry = brief.industry || 'beauty';
+  const controversyDesc = brief.controversyLevel <= 2 ? 'bezpieczny, delikatny' : brief.controversyLevel === 3 ? 'zbalansowany' : 'odważny, kontrowersyjny';
+  const lang = brief.language === 'en' ? 'angielskim' : 'polskim';
+  const format = brief.postFormat === 'random' ? 'dobierz najlepszy format' : brief.postFormat || 'educational';
+
+  return `Jesteś ekspertem od tworzenia viralowych postów na Instagram. Specjalizujesz się w copywritingu, opisach zdjęć i strategii hashtagów.
+
+BRIEF:
+- Zabieg/usługa: ${brief.treatment}
+- Branża: ${industry}
+- Grupa docelowa: ${brief.targetAudience}
+- Ton komunikacji: ${brief.tone}
+- Format posta: ${format}
+- Język: ${lang}
+- Poziom kontrowersji: ${brief.controversyLevel}/5 (${controversyDesc})
+${brief.notes ? `- Dodatkowe notatki: ${brief.notes}` : ''}
+${buildProfileContext(profile)}${buildGrowthContextSection(growthContext)}
+
+${accounts.length > 0 ? `KONTA INSPIRACYJNE (znalezione przez AI): ${accounts.map(a => '@' + a).join(', ')}
+Na podstawie tych kont i Twojej wiedzy o ich stylu postów, stwórz oryginalny post.` : ''}
+
+ZASADY BUDOWANIA POSTA:
+
+1. Caption musi zaczynać się HOOKIEM — pierwsze zdanie widoczne przed "więcej" decyduje o otwarciu. Bez "Cześć kochani". Wchodzimy jak młot.
+2. Struktura caption: hook → wartość/historia → CTA. Użyj enterów, emoji (umiarkowanie), formatowania.
+3. Zdjęcie/grafika — opisz DOKŁADNIE co powinno być na zdjęciu, aby przyciągało uwagę i zatrzymywało scrollowanie.
+4. Hashtagi — mix: 5 niszowych + 5 średnich + 5 dużych. Max 20 hashtagów.
+5. Pierwsze 3 hashtagi powinny być najbardziej niszowe i trafne.
+6. CTA — zapisz / skomentuj / udostępnij / prześlij znajomemu. Jedno konkretne działanie.
+7. Buying Journey — post trafia w konkretny etap: nieświadomy → świadomy problemu → świadomy rozwiązania → gotowy do działania.
+8. Wartość — post musi dostarczać samodzielną wartość. Nie może być pustym "inspirującym" postem.
+
+Odpowiedz WYŁĄCZNIE w formacie JSON (bez żadnego tekstu poza JSON):
+{
+  "contentType": "post",
+  "topic": "jasny temat w 1 zdaniu",
+  "format": "Educational / Inspirational / Promotional / Behind-scenes",
+  "tone": "ton komunikacji",
+  "captionText": "PEŁNA treść caption (z emoji, enterami, formatowaniem). Min 150 słów. Hook w pierwszym zdaniu.",
+  "photoDescription": "szczegółowy opis zdjęcia/grafiki — co widzimy, jaki styl, kolory, kompozycja, oświetlenie",
+  "editingStyle": "styl edycji zdjęcia: ciepłe tony / zimne / vintage / jasne i czyste / wysoki kontrast",
+  "photoTips": ["wskazówka 1 dot. zdjęcia", "wskazówka 2", "wskazówka 3"],
+  "hashtags": ["hashtag1", "hashtag2", "...do 20"],
+  "cta": "CTA w caption",
+  "ctaPunchline": "punchline zachęcający do interakcji",
+  "viralPotential": "niski / średni / wysoki / viralowy",
+  "viralReason": "dlaczego ten post ma potencjał",
+  "bestPublishTime": "dzień + godzina",
+  "needsFollowUp": true,
+  "followUpTopic": "temat powiązanego kolejnego posta",
+  "patterns": ["wzorzec viralowości 1", "wzorzec 2"],
+  "reelAnalyses": [],
+  "hook": "",
+  "hookVisual": "",
+  "hookRules": "",
+  "mainContent": [],
+  "mainContentRules": "",
+  "musicMood": "",
+  "subtitleStyle": "",
+  "cameraWork": "",
+  "estimatedRecordingTime": "",
+  "filmingTips": [],
+  "estimatedDuration": "",
+  "duration": ""
+}
+
+Zawsze odpowiadaj WYŁĄCZNIE w powyższym formacie JSON.`;
 }
 
 export function buildGrowthPlanPrompt(

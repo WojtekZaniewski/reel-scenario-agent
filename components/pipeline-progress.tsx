@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Check, Loader2, Search, Instagram, BarChart3, Sparkles, ChevronDown, ChevronUp } from "lucide-react"
+import type { ContentType } from "@/types/brief"
 
 export type PipelineStep = "accounts" | "reels" | "enrich" | "scenario"
 export type StepStatus = "waiting" | "running" | "done" | "error"
@@ -14,6 +15,7 @@ export interface StepState {
 
 interface PipelineProgressProps {
   steps: Record<PipelineStep, StepState>
+  contentType?: ContentType
 }
 
 const STEP_CONFIG: { key: PipelineStep; label: string; icon: React.ElementType }[] = [
@@ -80,12 +82,25 @@ function StepDetails({ step, data }: { step: PipelineStep; data?: Record<string,
   )
 }
 
-export function PipelineProgress({ steps }: PipelineProgressProps) {
+export function PipelineProgress({ steps, contentType = "reel" }: PipelineProgressProps) {
+  const isShortPipeline = contentType !== "reel"
+
+  const visibleSteps = isShortPipeline
+    ? STEP_CONFIG.filter((s) => s.key === "accounts" || s.key === "scenario")
+    : STEP_CONFIG
+
+  function getLabel(key: PipelineStep, defaultLabel: string) {
+    if (key === "scenario") {
+      if (contentType === "carousel") return "Generuję karuzelę"
+      if (contentType === "post") return "Generuję post"
+    }
+    return defaultLabel
+  }
+
   return (
     <div className="flex flex-col gap-3">
-      {STEP_CONFIG.map(({ key, label, icon: Icon }) => {
+      {visibleSteps.map(({ key, label, icon: Icon }) => {
         const step = steps[key]
-        const isWaiting = step.status === "waiting"
         const isRunning = step.status === "running"
         const isDone = step.status === "done"
         const isError = step.status === "error"
@@ -123,7 +138,7 @@ export function PipelineProgress({ steps }: PipelineProgressProps) {
                     : "text-muted-foreground"
                 }`}
               >
-                {step.message || label}
+                {step.message || getLabel(key, label)}
                 {isError && " — błąd"}
               </span>
             </div>
