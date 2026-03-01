@@ -284,18 +284,19 @@ export function BriefForm({ brief, onChange, onSubmit, isLoading }: BriefFormPro
       {contentType === "carousel" && (
         <div className="flex flex-col gap-2">
           <Label htmlFor="numberOfSlides" className="text-sm font-medium text-foreground">
-            Liczba slajdów: {brief.numberOfSlides || "5"}
+            Liczba slajdów
           </Label>
           <Input
             id="numberOfSlides"
             type="number"
             min={1}
             max={10}
-            value={brief.numberOfSlides || "5"}
+            value={brief.numberOfSlides ?? "5"}
             onChange={(e) => onChange({ ...brief, numberOfSlides: e.target.value })}
             onBlur={() => {
-              const n = Number(brief.numberOfSlides)
-              const clamped = Number.isNaN(n) || n < 1 ? 1 : n > 10 ? 10 : Math.floor(n)
+              const raw = brief.numberOfSlides
+              const n = Number(raw)
+              const clamped = !raw || Number.isNaN(n) || n < 1 ? 1 : n > 10 ? 10 : Math.floor(n)
               onChange({ ...brief, numberOfSlides: String(clamped) })
             }}
             className="border-border bg-card text-foreground w-24"
