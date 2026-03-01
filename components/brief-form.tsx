@@ -15,7 +15,6 @@ import {
   CAROUSEL_FORMAT_OPTIONS,
   POST_FORMAT_OPTIONS,
   DURATION_OPTIONS,
-  SLIDE_COUNT_OPTIONS,
   LANGUAGE_OPTIONS,
   CONTROVERSY_LABELS,
   CONTENT_TYPE_OPTIONS,
@@ -90,7 +89,7 @@ export function BriefForm({ brief, onChange, onSubmit, isLoading }: BriefFormPro
       carouselFormat: ct === "carousel" ? "random" : brief.carouselFormat,
       postFormat: ct === "post" ? "random" : brief.postFormat,
       duration: ct === "reel" ? randomFrom(DURATION_OPTIONS).value : brief.duration,
-      numberOfSlides: ct === "carousel" ? randomFrom(SLIDE_COUNT_OPTIONS).value : brief.numberOfSlides,
+      numberOfSlides: ct === "carousel" ? String(Math.floor(Math.random() * 10) + 1) : brief.numberOfSlides,
       controversyLevel: Math.floor(Math.random() * 5) + 1,
     })
   }
@@ -284,22 +283,21 @@ export function BriefForm({ brief, onChange, onSubmit, isLoading }: BriefFormPro
       {/* Number of slides — only for carousels */}
       {contentType === "carousel" && (
         <div className="flex flex-col gap-2">
-          <Label className="text-sm font-medium text-foreground">Liczba slajdów</Label>
-          <div className="flex flex-wrap gap-2 sm:gap-3">
-            {SLIDE_COUNT_OPTIONS.map((o) => (
-              <label key={o.value} className="flex items-center gap-1.5 cursor-pointer">
-                <input
-                  type="radio"
-                  name="numberOfSlides"
-                  value={o.value}
-                  checked={brief.numberOfSlides === o.value}
-                  onChange={(e) => onChange({ ...brief, numberOfSlides: e.target.value })}
-                  className="accent-primary"
-                />
-                <span className="text-sm text-foreground">{o.label}</span>
-              </label>
-            ))}
-          </div>
+          <Label htmlFor="numberOfSlides" className="text-sm font-medium text-foreground">
+            Liczba slajdów: {brief.numberOfSlides || "5"}
+          </Label>
+          <Input
+            id="numberOfSlides"
+            type="number"
+            min={1}
+            max={10}
+            value={brief.numberOfSlides || "5"}
+            onChange={(e) => {
+              const v = Math.max(1, Math.min(10, Number(e.target.value) || 1))
+              onChange({ ...brief, numberOfSlides: String(v) })
+            }}
+            className="border-border bg-card text-foreground w-24"
+          />
         </div>
       )}
 

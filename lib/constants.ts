@@ -66,8 +66,3 @@ export const POST_FORMAT_OPTIONS = [
   { value: 'random', label: 'Losowy' },
 ];
 
-export const SLIDE_COUNT_OPTIONS = [
-  { value: '5', label: '5 slajdów' },
-  { value: '7', label: '7 slajdów' },
-  { value: '10', label: '10 slajdów' },
-];
