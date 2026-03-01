@@ -292,9 +292,11 @@ export function BriefForm({ brief, onChange, onSubmit, isLoading }: BriefFormPro
             min={1}
             max={10}
             value={brief.numberOfSlides || "5"}
-            onChange={(e) => {
-              const v = Math.max(1, Math.min(10, Number(e.target.value) || 1))
-              onChange({ ...brief, numberOfSlides: String(v) })
+            onChange={(e) => onChange({ ...brief, numberOfSlides: e.target.value })}
+            onBlur={() => {
+              const n = Number(brief.numberOfSlides)
+              const clamped = Number.isNaN(n) || n < 1 ? 1 : n > 10 ? 10 : Math.floor(n)
+              onChange({ ...brief, numberOfSlides: String(clamped) })
             }}
             className="border-border bg-card text-foreground w-24"
           />
